@@ -15,20 +15,11 @@
   #ifdef _SIMULATE_
   #include "simAVRHeader.h"
   #endif
- #include "USART_RS232_H_file.h"
-
-
-// -------- Bluetooth HC-05 MODULE -------------
-unsigned char Data_in;
-void Bluetooth_config(){
-
-}
-
 
   // -------- State Varibles -------------
 
   enum ReadDipSwitch_States {READ_DIP};
-  enum Bluetooth_States {READ_BLT,SEND_BLT};
+  enum ReadWifi_States {READ_WIFI};
 
   // -------- End State Varibles -------------
 
@@ -88,28 +79,20 @@ typedef struct _task{
   //  Read A0-A7
   // Postcondition
   int ReadDipSwitch(int state){
-    // switch(state){
-    //   case READ_DIP:
-    //     d_switch = ~PINA & 0x01;
-    //     if(d_switch){PORTC=0x01;}
-    //     if(!d_switch){PORTC=0x00;}
-    // }
+    switch(state){
+      case READ:
+        d_switch = ~PINA & 0x01;
+        if(d_switch){PORTC=0x01;}
+        if(!d_switch){PORTC=0x00;}
+    }
     return READ_DIP;
   }
-  int BluetoothTick(int state){
-
-
-
+  int ReadWifi(int state){
     switch(state){
-      case READ_BLT:
-        break;
-      case SEND_BLT:
-        break;
+      case READ_WIFI:
 
-      }
-
-
-    return READ_BLT;
+    }
+    return READ_WIFI;
   }
 
 
@@ -125,15 +108,11 @@ typedef struct _task{
 int main(void) {
     /* Insert DDR and PORT initializations */
     DDRC = 0xFF; PORTC= 0x00;  // LED LIGHT
-    DDRA = 0x00;  // Dip Switch
-    DDRB = 0xFF;               // Bluetooth
+    DDRA = 0x00; PORTA = 0x01; // Dip Switch
 
-    USART_Init(9600);	;       // Bluetooth USART
-
-    PORTC = 0x01;
     unsigned short i; //scheduler for loop
 
-    static task task1,task2;
+    static task task1;
     task* tasks[] = {&task1,&task2};
     const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
@@ -144,45 +123,26 @@ int main(void) {
     task1.elapsedTime = task1.period;
     task1.TickFct = &ReadDipSwitch;
 
-    // Task 2 (Blutooth)
-    task2.state = READ_BLT;
+    // Task 1 (Wifi-Reciever)
+    task2.state = READ_WIFI;
     task2.period = 200;
     task2.elapsedTime = task2.period;
-    task2.TickFct = &BluetoothTick;
+    task2.TickFct = &ReadWifi;
 
-    // TimerSet(100); // need to set and create var GCD
-    // TimerOn();
-    // while (1) {
-    //   for(i=0; i<numTasks;i++){
-    //     if (tasks[i]->elapsedTime == tasks[i]->period){ //task ready to tick
-    //       tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);// Set Next state
-    //       tasks[i]->elapsedTime=0; //Reset the elapsed time
-    //     }
-    //     tasks[i]->elapsedTime += 100;
-    //
-    //   }
-    //   while(!TimerFlag);
-    //   TimerFlag = 0;
-    //
-    // }
-    while(1)
-	{
-		Data_in = USART_RxChar();						/* receive data from Bluetooth device*/
-		if(Data_in =='1')
-		{
-			PORTC = 0x03;							/* Turn ON LED */
-			// USART_SendString("LED_ON");					/* send status of LED i.e. LED ON */
+    TimerSet(100); // need to set and create var GCD
+    TimerOn();
+    while (1) {
+      for(i=0; i<numTasks;i++){
+        if (tasks[i]->elapsedTime == tasks[i]->period){ //task ready to tick
+          tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);// Set Next state
+          tasks[i]->elapsedTime=0; //Reset the elapsed time
+        }
+        tasks[i]->elapsedTime += 100;
 
-		}
-		else if(Data_in =='2')
-		{
-			PORTC = 0x02;							/* Turn OFF LED */
-			// USART_SendString("LED_OFF"); 				/* send status of LED i.e. LED OFF */
-		}
-		// else
-			// USART_SendString("Select proper option");	/* send message for selecting proper option */
+      }
+      while(!TimerFlag);
+      TimerFlag = 0;
 
-	// return 0;
-  }
+    }
     return 0;
 }
