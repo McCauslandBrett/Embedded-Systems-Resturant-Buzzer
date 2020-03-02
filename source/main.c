@@ -28,13 +28,14 @@ void Bluetooth_config(){
   // -------- State Varibles -------------
 
   enum ReadDipSwitch_States {READ_DIP};
-  enum Bluetooth_States {READ_BLT,SEND_BLT};
+  enum Bluetooth_States {ON_BLT,OFF_BLT};
 
   // -------- End State Varibles -------------
 
   // -------- Shared Varibles -------------
    unsigned char temp;
-    unsigned char d_switch;
+   unsigned char d_switch;
+   unsigned char H,L;
   // -------- End Shared Varibles -------------
 
   // -------- Clock Varibles -------------
@@ -84,7 +85,7 @@ typedef struct _task{
 // -------- End scheduler -------------
 
 // -------- Tick Functions -------------
-  // Precondition:
+
   //  Read A0-A7
   // Postcondition
   int ReadDipSwitch(int state){
@@ -96,21 +97,32 @@ typedef struct _task{
     // }
     return READ_DIP;
   }
-  int BluetoothTick(int state){
-
-
+int BluetoothTick(int state){
+    Data_in = USART_RxChar(); /* receive data from Bluetooth device*/
 
     switch(state){
-      case READ_BLT:
+      case ON_BLT:
+        state = (Data_in =='1') ? OFF_BLT: ON_BLT;
         break;
-      case SEND_BLT:
+
+      case OFF_BLT:
+        state = (Data_in =='1') ? ON_BLT: OFF_BLT;
         break;
 
       }
+      switch(state){
+        case ON_BLT:
+          PORTC = 0x03;
+          break;
 
+        case OFF_BLT:
+          PORTC = 0x02;
+          break;
 
-    return READ_BLT;
-  }
+        }
+    return state;
+}
+
 
 
 
@@ -126,7 +138,7 @@ int main(void) {
     /* Insert DDR and PORT initializations */
     DDRC = 0xFF; PORTC= 0x00;  // LED LIGHT
     DDRA = 0x00;  // Dip Switch
-    DDRB = 0xFF;               // Bluetooth
+    DDRB = 0xFF;  // Bluetooth
 
     USART_Init(9600);	;       // Bluetooth USART
 
@@ -140,31 +152,38 @@ int main(void) {
 
     // Task 1 (DipSwitch)
     task1.state = READ_DIP;
-    task1.period = 300;
+    task1.period = 100;
     task1.elapsedTime = task1.period;
     task1.TickFct = &ReadDipSwitch;
 
     // Task 2 (Blutooth)
-    task2.state = READ_BLT;
-    task2.period = 200;
+    task2.state = OFF_BLT;
+    task2.period = 100;
     task2.elapsedTime = task2.period;
     task2.TickFct = &BluetoothTick;
 
-    // TimerSet(100); // need to set and create var GCD
-    // TimerOn();
-    // while (1) {
-    //   for(i=0; i<numTasks;i++){
-    //     if (tasks[i]->elapsedTime == tasks[i]->period){ //task ready to tick
-    //       tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);// Set Next state
-    //       tasks[i]->elapsedTime=0; //Reset the elapsed time
-    //     }
-    //     tasks[i]->elapsedTime += 100;
-    //
-    //   }
-    //   while(!TimerFlag);
-    //   TimerFlag = 0;
-    //
-    // }
+    // Task 2 (Motor)
+    // task3.state = READ_BLT;
+    // task3.period = 100;
+    // task3.elapsedTime = task3.period;
+    // task3.TickFct = &PWMTick;
+
+
+    TimerSet(100); // need to set and create var GCD
+    TimerOn();
+    while (1) {
+      for(i=0; i<numTasks;i++){
+        if (tasks[i]->elapsedTime == tasks[i]->period){ //task ready to tick
+          tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);// Set Next state
+          tasks[i]->elapsedTime=0; //Reset the elapsed time
+        }
+        tasks[i]->elapsedTime += 100;
+
+      }
+      while(!TimerFlag);
+      TimerFlag = 0;
+
+    }
     while(1)
 	{
 		Data_in = USART_RxChar();						/* receive data from Bluetooth device*/
