@@ -19,16 +19,15 @@
 
 
 // -------- Bluetooth HC-05 MODULE -------------
-unsigned char Data_in;
+unsigned char Data_in,blt;
 void Bluetooth_config(){
 
 }
-
-
   // -------- State Varibles -------------
 
   enum ReadDipSwitch_States {READ_DIP};
   enum Bluetooth_States {ON_BLT,OFF_BLT};
+  enum PWM_States {HIGH,LOW};
 
   // -------- End State Varibles -------------
 
@@ -36,6 +35,7 @@ void Bluetooth_config(){
    unsigned char temp;
    unsigned char d_switch;
    unsigned char H,L;
+   unsigned char k=0x00;
   // -------- End Shared Varibles -------------
 
   // -------- Clock Varibles -------------
@@ -86,16 +86,76 @@ typedef struct _task{
 
 // -------- Tick Functions -------------
 
-  //  Read A0-A7
+  //  Read A0-A1
   // Postcondition
   int ReadDipSwitch(int state){
-    // switch(state){
-    //   case READ_DIP:
-    //     d_switch = ~PINA & 0x01;
-    //     if(d_switch){PORTC=0x01;}
-    //     if(!d_switch){PORTC=0x00;}
-    // }
+    static unsigned char AA0,AA1;
+    AA0 = ~PINA & 0x01;
+    AA1 = ~PINA & 0x02;
+    switch(state){
+      case READ_DIP:
+       if (AA0 && AA1) {
+         H = 0x0A;
+         L = 0x00;
+         break;
+       }
+       if (!AA0) {
+         H = 0x00;
+         L = 0x0A;
+         break;
+       }
+       if (AA0 && !AA1) {
+         H = 0x05;
+         L = 0x05;
+         break;
+       }
+    }
     return READ_DIP;
+  }
+  //period 1000ms
+  int MotorPWM(int state){
+
+    switch(state){
+      case HIGH:
+        if(k < H && blt){
+          state = HIGH;
+          k++;
+          break;
+        }
+        else{
+          k=0;
+          state = LOW;
+          break;
+      }
+      case LOW:
+        if(k < L){
+          state = LOW;
+          k++;
+          break;
+        }
+        if (k > L && !blt) {
+          k=0;
+          state = LOW;
+          break;
+        }
+        if(k > L && blt)
+          k=0;
+          state = HIGH;
+          break;
+        }
+
+
+      //PINC0 :=  Buzzer
+      //PINC1 :=  Operational LIGHT
+      switch(state){ //actions
+        case HIGH:
+           PORTC = 0x03;
+        break;
+        case LOW:
+           PORTC = 0x02;
+          break;
+        }
+    return state;
   }
 int BluetoothTick(int state){
     Data_in = USART_RxChar(); /* receive data from Bluetooth device*/
@@ -112,11 +172,13 @@ int BluetoothTick(int state){
       }
       switch(state){
         case ON_BLT:
-          PORTC = 0x03;
+          // LCD
+          blt=0x00;
           break;
 
         case OFF_BLT:
-          PORTC = 0x02;
+          // LCD
+            blt=0x01;
           break;
 
         }
@@ -139,14 +201,15 @@ int main(void) {
     DDRC = 0xFF; PORTC= 0x00;  // LED LIGHT
     DDRA = 0x00;  // Dip Switch
     DDRB = 0xFF;  // Bluetooth
+    H=0;L=10;
 
     USART_Init(9600);	;       // Bluetooth USART
 
-    PORTC = 0x01;
+    PORTC = 0x02;
     unsigned short i; //scheduler for loop
 
-    static task task1,task2;
-    task* tasks[] = {&task1,&task2};
+    static task task1,task2,task3;
+    task* tasks[] = {&task1,&task2,&task3};
     const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
 
@@ -163,10 +226,10 @@ int main(void) {
     task2.TickFct = &BluetoothTick;
 
     // Task 2 (Motor)
-    // task3.state = READ_BLT;
-    // task3.period = 100;
-    // task3.elapsedTime = task3.period;
-    // task3.TickFct = &PWMTick;
+    task3.state = LOW;
+    task3.period = 100;
+    task3.elapsedTime = task3.period;
+    task3.TickFct = &MotorPWM;
 
 
     TimerSet(100); // need to set and create var GCD
@@ -184,24 +247,6 @@ int main(void) {
       TimerFlag = 0;
 
     }
-    while(1)
-	{
-		Data_in = USART_RxChar();						/* receive data from Bluetooth device*/
-		if(Data_in =='1')
-		{
-			PORTC = 0x03;							/* Turn ON LED */
-			// USART_SendString("LED_ON");					/* send status of LED i.e. LED ON */
 
-		}
-		else if(Data_in =='2')
-		{
-			PORTC = 0x02;							/* Turn OFF LED */
-			// USART_SendString("LED_OFF"); 				/* send status of LED i.e. LED OFF */
-		}
-		// else
-			// USART_SendString("Select proper option");	/* send message for selecting proper option */
-
-	// return 0;
-  }
     return 0;
 }
