@@ -11,6 +11,7 @@
   // -- added from provided source files --
   #include "io.h"
   #include "keypad.h"
+  #include "nokia5110.h"
   #include <avr/interrupt.h>
   #ifdef _SIMULATE_
   #include "simAVRHeader.h"
@@ -23,9 +24,9 @@ unsigned char Data_in,blt;
 
   // -------- State Varibles -------------
 
-  enum ReadDipSwitch_States {READ_DIP};
   enum Bluetooth_States {ON_BLT,OFF_BLT};
   enum PWM_States {HIGH,LOW,OFF};
+  enum NOKIA_States {WAITING,RETURNING};
 
   // -------- End State Varibles -------------
 
@@ -82,9 +83,6 @@ typedef struct _task{
 // -------- End scheduler -------------
 
 // -------- Tick Functions -------------
-
-  //  Read A0-A1
-  // Postcondition
 
   int motorPWM(int state){
     switch(state){
@@ -155,19 +153,49 @@ typedef struct _task{
       }
       switch(state){
         case ON_BLT:
-          // LCD
           blt=0x00;
           break;
 
         case OFF_BLT:
-          // LCD
             blt=0x01;
           break;
 
         }
     return state;
 }
+int NokiaTick(int state){
+ Data_in = USART_RxChar(); /* receive data from Bluetooth device*/
 
+ switch(state){
+   case WAITING:
+     state = (blt == 0x00) ? RETURNING: WAITING;
+     break;
+
+   case RETURNING:
+     state = (blt == 0x01) ? RETURNING: WAITING;
+     break;
+
+   }
+   switch(state){
+     case WAITING:
+      nokia_lcd_clear();
+      nokia_lcd_write_string("Dans Pizzia",1);
+      nokia_lcd_set_cursor(0, 10);
+      nokia_lcd_write_string("Order #1", 2);
+      nokia_lcd_render();
+      break;
+
+     case RETURNING:
+        nokia_lcd_clear();
+        nokia_lcd_write_string("RETURN",2);
+        nokia_lcd_set_cursor(0, 10);
+        nokia_lcd_write_string("YOUR ORDER IS READY!", 1);
+        nokia_lcd_render();
+       break;
+
+     }
+ return state;
+}
 
 
 
@@ -186,12 +214,17 @@ int main(void) {
     DDRB = 0xFF;  // Bluetooth
     H=2;L=1;
     k=0;
-    USART_Init(9600);	;       // Bluetooth USART
-
+    USART_Init(9600);	       // Bluetooth USART
+    nokia_lcd_init();
+    nokia_lcd_clear();
+    nokia_lcd_write_string("Dans Pizzia",1);
+    nokia_lcd_set_cursor(0, 10);
+    nokia_lcd_write_string("Order #1", 2);
+    nokia_lcd_render();
     unsigned short i; //scheduler for loop
 
     static task task1,task2,task3;
-    task* tasks[] = {&task1};
+    task* tasks[] = {&task1,&task2,&task3};
     const unsigned short numTasks = sizeof(tasks)/sizeof(task*);
 
 
@@ -204,10 +237,16 @@ int main(void) {
     task1.TickFct = &BluetoothTick;
 
     // Task 2 (Motor)
-    task3.state = LOW;
+    task2.state = LOW;
+    task2.period = 100;
+    task2.elapsedTime = task2.period;
+    task2.TickFct = &motorPWM;
+
+    // Task 3 (SCREEN)
+    task3.state = WAITING;
     task3.period = 100;
     task3.elapsedTime = task3.period;
-    task3.TickFct = &motorDummy;
+    task3.TickFct = &NokiaTick;
 
 
     TimerSet(100); // need to set and create var GCD
