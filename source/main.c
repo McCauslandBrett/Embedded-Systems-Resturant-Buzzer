@@ -164,7 +164,7 @@ typedef struct _task{
     return state;
 }
 int NokiaTick(int state){
- Data_in = USART_RxChar(); /* receive data from Bluetooth device*/
+
 
  switch(state){
    case WAITING:
