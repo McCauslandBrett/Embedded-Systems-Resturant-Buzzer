@@ -70,6 +70,12 @@
     _avr_timer_M=M;
     _avr_timer_cntcurr = _avr_timer_M;
   }
+//   ISR(USART0_RX_vect)
+// {
+//   while (!(UCSR0A & (1 << RXC0)));					/* Wait until new data receive */
+//   Data_in=UDR0;
+//
+// }
 // -------- End Timmer Functions -------------
 
 //  -------- scheduler -------------
@@ -85,12 +91,12 @@ typedef struct _task{
 
 // -------- Tick Functions -------------
 int BluetoothTick(int state){
- Data_in = USART_Receive(); /* receive data from Bluetooth device*/
- nokia_lcd_clear();
- nokia_lcd_write_string("Blue",1);
- nokia_lcd_set_cursor(0, 10);
- nokia_lcd_write_string(Data_in, 1);
- nokia_lcd_render();
+  Data_in = USART_Receive(); /* receive data from Bluetooth device*/
+ // nokia_lcd_clear();
+ // nokia_lcd_write_string("Blue",1);
+ // nokia_lcd_set_cursor(0, 10);
+ // nokia_lcd_write_string(Data_in, 1);
+ // nokia_lcd_render();
  switch(state){
    case BLT_INIT:
      state = OFF_BLT;
@@ -176,6 +182,8 @@ int BluetoothTick(int state){
         break;
       case LOW:
         PORTC = 0x00;
+      case OFF:
+        PORTC = 0x00;
     }
     return state;
   }
@@ -237,8 +245,9 @@ int main(void) {
     DDRC = 0xFF; PORTC= 0x00;  // LED LIGHT
     DDRB = 0xFF;  // Bluetooth
     H=2;L=1;
-
+    Data_in=0x00;
     initUSART();       // Bluetooth USART
+    sei();
     nokia_lcd_init();
     nokia_lcd_clear();
     nokia_lcd_write_string("ON",1);
@@ -253,7 +262,7 @@ int main(void) {
 
 
     // Task 2 (Blutooth)
-    task1.state = BLT_INIT;
+    task1.state = OFF_BLT;
     task1.period = 100;
     task1.elapsedTime = task1.period;
     task1.TickFct = &BluetoothTick;

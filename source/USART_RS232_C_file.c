@@ -8,7 +8,8 @@
 
 void USART_Init(unsigned long BAUDRATE)				/* USART initialize function */
 {
-	UCSR0B |= (1 << RXEN0) | (1 << TXEN0);				/* Enable USART transmitter and receiver */
+	// UCSR0B |= (1 << RXEN0) | (1 << TXEN0) //usart blocking
+	UCSR0B |= (1 << RXEN0) | (1 << TXEN0) | (1 << RXCIE0);				/* Enable USART transmitter and receiver */
 	UCSR0C |= (1 << UMSEL00)| (1 << UCSZ01) | (1 << UCSZ00);	/* Write USCRC for 8 bit data and 1 stop bit */
 	UBRR0L = BAUD_PRESCALE;
 	// Load upper 8-bits of the baud rate value into the high byte of the UBRR register

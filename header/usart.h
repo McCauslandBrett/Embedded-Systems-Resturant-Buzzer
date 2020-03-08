@@ -28,40 +28,25 @@ void initUSART()
 	// Load upper 8-bits of the baud rate value into the high byte of the UBRR register
 	UBRR0H = (BAUD_PRESCALE >> 8);
 }
-////////////////////////////////////////////////////////////////////////////////
-//Functionality - checks if USART is ready to send
-//Parameter: None
-//Returns: 1 if true else 0
-// unsigned char USART_IsSendReady()
-// {
-// 	return (UCSRA & (1 << UDRE));
-// }
-////////////////////////////////////////////////////////////////////////////////
-//Functionality - checks if USART has recieved data
-//Parameter: None
-//Returns: 1 if true else 0
-// unsigned char USART_HasTransmitted()
-// {
-// 	return (UCSRA & (1 << TXC));
-// }
+
 ////////////////////////////////////////////////////////////////////////////////
 // **** WARNING: THIS FUNCTION BLOCKS MULTI-TASKING; USE WITH CAUTION!!! ****
 //Functionality - checks if USART has recieved data
 //Parameter: None
 //Returns: 1 if true else 0
-// unsigned char USART_HasReceived()
-// {
-// 	return (UCSRA & (1 << RXC));
-// }
+unsigned char USART_HasReceived()
+{
+	return (UCSR0A & (1 << RXC0));
+}
 ////////////////////////////////////////////////////////////////////////////////
 //Functionality - Flushes the data register
 //Parameter: None
 //Returns: None
-// void USART_Flush()
-// {
-// 	static unsigned char dummy;
-// 	while ( UCSRA & (1 << RXC) ) { dummy = UDR; }
-// }
+void USART_Flush()
+{
+	static unsigned char dummy;
+	while ( UCSR0A & (1 << RXC0) ) { dummy = UDR0; }
+}
 ////////////////////////////////////////////////////////////////////////////////
 // **** WARNING: THIS FUNCTION BLOCKS MULTI-TASKING; USE WITH CAUTION!!! ****
 //Functionality - Sends an 8-bit char value
@@ -79,8 +64,15 @@ void initUSART()
 //Returns: Unsigned char data from the receive buffer
 unsigned char USART_Receive()
 {
-	while ( !(UCSR0A & (1 << RXC0)) ); // Wait for data to be received
-	return UDR0; // Get and return received data from buffer
+	unsigned char temp;
+	if (USART_HasReceived()){
+		temp = UDR0;
+		USART_Flush();
+		return temp;
+	}
+	else{return 0;}
+	// while ( !(UCSR0A & (1 << RXC0)) ); // Wait for data to be received
+	// return UDR0; // Get and return received data from buffer
 }
 
 #endif //USART_H
