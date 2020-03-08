@@ -92,11 +92,7 @@ typedef struct _task{
 // -------- Tick Functions -------------
 int BluetoothTick(int state){
   Data_in = USART_Receive(); /* receive data from Bluetooth device*/
- // nokia_lcd_clear();
- // nokia_lcd_write_string("Blue",1);
- // nokia_lcd_set_cursor(0, 10);
- // nokia_lcd_write_string(Data_in, 1);
- // nokia_lcd_render();
+
  switch(state){
    case BLT_INIT:
      state = OFF_BLT;
@@ -250,7 +246,9 @@ int main(void) {
     sei();
     nokia_lcd_init();
     nokia_lcd_clear();
-    nokia_lcd_write_string("ON",1);
+    nokia_lcd_write_string("Dans Pizzia",1);
+    nokia_lcd_set_cursor(0, 10);
+    nokia_lcd_write_string("Order #1", 2);
     nokia_lcd_render();
     unsigned short i; //scheduler for loop
 
@@ -282,9 +280,7 @@ int main(void) {
 
     TimerSet(100); // need to set and create var GCD
     TimerOn();
-    nokia_lcd_clear();
-    nokia_lcd_write_string("ON2",1);
-    nokia_lcd_render();
+
     while (1) {
       for(i=0; i<numTasks;i++){
         if (tasks[i]->elapsedTime == tasks[i]->period){ //task ready to tick
