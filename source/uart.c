@@ -11,14 +11,9 @@ static void uart_38400(void);
 void
 USART_init(uint8_t b)
 {
-	switch(b)
-	{
-	case BAUD_2400:		uart_2400(); break;
-	case BAUD_38400:	uart_38400(); break;
-	case BAUD_9600:
-	default:
-		uart_9600(); break;
-	}
+
+		uart_9600(); 
+
 
 	// Enable Rx/Tx in register UCSR0B
 	UCSR0B 	= (1<<RXEN0)|(1<<TXEN0);

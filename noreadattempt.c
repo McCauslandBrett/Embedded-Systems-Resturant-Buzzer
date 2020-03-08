@@ -11,16 +11,16 @@
   // -- added from provided source files --
   #include "io.h"
   #include "keypad.h"
-   #include "nokia5110.h"
+  #include "nokia5110.h"
   #include <avr/interrupt.h>
   #ifdef _SIMULATE_
   #include "simAVRHeader.h"
   #endif
- #include "usart.h"
+ #include "USART_RS232_H_file.h"
 
 
 // -------- Bluetooth HC-05 MODULE -------------
- unsigned char Data_in;
+ char Data_in;
  unsigned char blt;
 
   // -------- State Varibles -------------
@@ -85,7 +85,7 @@ typedef struct _task{
 
 // -------- Tick Functions -------------
 int BluetoothTick(int state){
- Data_in = USART_Receive(); /* receive data from Bluetooth device*/
+ Data_in = USART_RxChar(); /* receive data from Bluetooth device*/
  nokia_lcd_clear();
  nokia_lcd_write_string("Blue",1);
  nokia_lcd_set_cursor(0, 10);
@@ -100,7 +100,7 @@ int BluetoothTick(int state){
      break;
 
    case OFF_BLT:
-      state = ((Data_in -'0') =='1') ? ON_BLT:OFF_BLT;
+      state = (Data_in =='1') ? ON_BLT:OFF_BLT;
      break;
 
    }
@@ -110,20 +110,8 @@ int BluetoothTick(int state){
        break;
 
      case OFF_BLT:
-       if((Data_in -'0') < '1'){
-         nokia_lcd_write_string("less 1",1);
-         nokia_lcd_set_cursor(0, 10);
-         nokia_lcd_write_string(Data_in, 1);
-         nokia_lcd_render();
-       }
-       if((Data_in -'0') > '1'){
+       if(Data_in > '1'){
          nokia_lcd_write_string("greater 1",1);
-         nokia_lcd_set_cursor(0, 10);
-         nokia_lcd_write_string(Data_in, 1);
-         nokia_lcd_render();
-       }
-       if(Data_in == '0'){
-         nokia_lcd_write_string("equal 0",1);
          nokia_lcd_set_cursor(0, 10);
          nokia_lcd_write_string(Data_in, 1);
          nokia_lcd_render();
@@ -250,7 +238,7 @@ int main(void) {
     DDRB = 0xFF;  // Bluetooth
     H=2;L=1;
 
-    initUSART();       // Bluetooth USART
+    USART_Init(9600);	       // Bluetooth USART
     nokia_lcd_init();
     nokia_lcd_clear();
     nokia_lcd_write_string("ON",1);

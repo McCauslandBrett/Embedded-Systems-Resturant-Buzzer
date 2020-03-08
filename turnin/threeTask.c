@@ -11,17 +11,16 @@
   // -- added from provided source files --
   #include "io.h"
   #include "keypad.h"
-   #include "nokia5110.h"
+  #include "nokia5110.h"
   #include <avr/interrupt.h>
   #ifdef _SIMULATE_
   #include "simAVRHeader.h"
   #endif
- #include "usart.h"
+ #include "USART_RS232_H_file.h"
 
 
 // -------- Bluetooth HC-05 MODULE -------------
- unsigned char Data_in;
- unsigned char blt;
+unsigned char Data_in,blt;
 
   // -------- State Varibles -------------
 
@@ -85,22 +84,18 @@ typedef struct _task{
 
 // -------- Tick Functions -------------
 int BluetoothTick(int state){
- Data_in = USART_Receive(); /* receive data from Bluetooth device*/
- nokia_lcd_clear();
- nokia_lcd_write_string("Blue",1);
- nokia_lcd_set_cursor(0, 10);
- nokia_lcd_write_string(Data_in, 1);
- nokia_lcd_render();
+ Data_in = USART_RxChar(); /* receive data from Bluetooth device*/
+
  switch(state){
    case BLT_INIT:
      state = OFF_BLT;
      break;
    case ON_BLT:
-     state = (Data_in =='2') ? OFF_BLT: ON_BLT;
+     state = (Data_in =='1') ? OFF_BLT: ON_BLT;
      break;
 
    case OFF_BLT:
-      state = ((Data_in -'0') =='1') ? ON_BLT:OFF_BLT;
+     state = (Data_in =='1') ? ON_BLT: OFF_BLT;
      break;
 
    }
@@ -110,24 +105,6 @@ int BluetoothTick(int state){
        break;
 
      case OFF_BLT:
-       if((Data_in -'0') < '1'){
-         nokia_lcd_write_string("less 1",1);
-         nokia_lcd_set_cursor(0, 10);
-         nokia_lcd_write_string(Data_in, 1);
-         nokia_lcd_render();
-       }
-       if((Data_in -'0') > '1'){
-         nokia_lcd_write_string("greater 1",1);
-         nokia_lcd_set_cursor(0, 10);
-         nokia_lcd_write_string(Data_in, 1);
-         nokia_lcd_render();
-       }
-       if(Data_in == '0'){
-         nokia_lcd_write_string("equal 0",1);
-         nokia_lcd_set_cursor(0, 10);
-         nokia_lcd_write_string(Data_in, 1);
-         nokia_lcd_render();
-       }
        blt=0x00;
        break;
 
@@ -221,11 +198,11 @@ int NokiaTick(int state){
    }
    if(blt == 0x00){
      state = WAITING;
-     nokia_lcd_clear();
-     nokia_lcd_write_string("Dans Pizzia",1);
-     nokia_lcd_set_cursor(0, 10);
-     nokia_lcd_write_string("Order #1", 2);
-     nokia_lcd_render();
+     // nokia_lcd_clear();
+     // nokia_lcd_write_string("Dans Pizzia",1);
+     // nokia_lcd_set_cursor(0, 10);
+     // nokia_lcd_write_string("Order #1", 2);
+     // nokia_lcd_render();
    }
    break;
 
@@ -250,10 +227,12 @@ int main(void) {
     DDRB = 0xFF;  // Bluetooth
     H=2;L=1;
 
-    initUSART();       // Bluetooth USART
+    USART_Init(9600);	       // Bluetooth USART
     nokia_lcd_init();
     nokia_lcd_clear();
-    nokia_lcd_write_string("ON",1);
+    nokia_lcd_write_string("Dans Pizzia",1);
+    nokia_lcd_set_cursor(0, 10);
+    nokia_lcd_write_string("Order #1", 2);
     nokia_lcd_render();
     unsigned short i; //scheduler for loop
 
@@ -266,7 +245,7 @@ int main(void) {
 
     // Task 2 (Blutooth)
     task1.state = BLT_INIT;
-    task1.period = 100;
+    task1.period = 50;
     task1.elapsedTime = task1.period;
     task1.TickFct = &BluetoothTick;
 
@@ -283,18 +262,15 @@ int main(void) {
     task3.TickFct = &NokiaTick;
 
 
-    TimerSet(100); // need to set and create var GCD
+    TimerSet(50); // need to set and create var GCD
     TimerOn();
-    nokia_lcd_clear();
-    nokia_lcd_write_string("ON2",1);
-    nokia_lcd_render();
     while (1) {
       for(i=0; i<numTasks;i++){
         if (tasks[i]->elapsedTime == tasks[i]->period){ //task ready to tick
           tasks[i]->state = tasks[i]->TickFct(tasks[i]->state);// Set Next state
           tasks[i]->elapsedTime=0; //Reset the elapsed time
         }
-        tasks[i]->elapsedTime += 100;
+        tasks[i]->elapsedTime += 50;
 
       }
       while(!TimerFlag);

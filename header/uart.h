@@ -4,9 +4,9 @@
 #include "common.h"
 
 //#define UART_BAUD 9600
-#define BAUD_9600	1
-#define BAUD_2400	2
-#define BAUD_38400	3
+// #define BAUD_9600	1
+// #define BAUD_2400	2
+// #define BAUD_38400	3
 
 //Perform UART startup initialization.
 void	USART_init(uint8_t b);
@@ -21,4 +21,3 @@ void	USART_tx(unsigned char);
 void 	USART_tx_S(const char *);
 
 void 	USART_tx_P(const char *);
-
