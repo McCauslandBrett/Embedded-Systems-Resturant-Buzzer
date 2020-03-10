@@ -48,15 +48,7 @@ void USART_Flush()
 	while ( UCSR0A & (1 << RXC0) ) { dummy = UDR0; }
 }
 ////////////////////////////////////////////////////////////////////////////////
-// **** WARNING: THIS FUNCTION BLOCKS MULTI-TASKING; USE WITH CAUTION!!! ****
-//Functionality - Sends an 8-bit char value
-//Parameter: Takes a single unsigned char value
-//Returns: None
-// void USART_Send(unsigned char sendMe)
-// {
-// 	while( !(UCSRA & (1 << UDRE)) );
-// 	UDR = sendMe;
-// }
+
 ////////////////////////////////////////////////////////////////////////////////
 // **** WARNING: THIS FUNCTION BLOCKS MULTI-TASKING; USE WITH CAUTION!!! ****
 //Functionality - receives an 8-bit char value
@@ -71,8 +63,6 @@ unsigned char USART_Receive()
 		return temp;
 	}
 	else{return 0;}
-	// while ( !(UCSR0A & (1 << RXC0)) ); // Wait for data to be received
-	// return UDR0; // Get and return received data from buffer
 }
 
 #endif //USART_H
