@@ -1,11 +1,12 @@
 /*	Author: brettmccausland
- *  Partner(s) Name: Jeremy
- *	Lab Section:
- *	Assignment: Lab 11  Exercise 3
- *	Exercise Description: [optional - include for your own benefit]
  *
- *	I acknowledge all content contained herein, excluding template or example
- *	code, is my own original work.
+ *	Lab Section:021
+ *	Assignment: Final Project
+ *	Exercise Description: Resturant Buzzer
+ *
+ *	I acknowledge all content contained herein, excluding template and little/Buster Nokia
+    LCD Library code, is my own original work.
+ *
  */
   #include  <avr/io.h>
   // -- added from provided source files --
@@ -70,12 +71,7 @@
     _avr_timer_M=M;
     _avr_timer_cntcurr = _avr_timer_M;
   }
-//   ISR(USART0_RX_vect)
-// {
-//   while (!(UCSR0A & (1 << RXC0)));					/* Wait until new data receive */
-//   Data_in=UDR0;
-//
-// }
+
 // -------- End Timmer Functions -------------
 
 //  -------- scheduler -------------
