@@ -108,12 +108,6 @@ int BluetoothTick(int state){
        break;
 
      case OFF_BLT:
-       if(Data_in == '0'){
-         nokia_lcd_write_string("equal 0",1);
-         nokia_lcd_set_cursor(0, 10);
-         nokia_lcd_write_string(Data_in, 1);
-         nokia_lcd_render();
-       }
        blt=0x00;
        break;
 
